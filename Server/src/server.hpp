@@ -20,9 +20,9 @@ public:
 private:
     mrpt::utils::CClientTCPSocket* socket;
     std::vector<char> unprocessed_data;
-    uint32_t size_read;
+    uint32_t size_read = 0;
     // Size remaining in this message
-    uint32_t size_remaining;
+    uint32_t size_remaining = 0;
 };
 
 class Server {

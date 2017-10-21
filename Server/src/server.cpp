@@ -64,12 +64,14 @@ Server::Server(size_t n_robots, const SCb callback, unsigned short listenPort, s
     std::cout << "Waiting for robots to connect..." << std::endl;
     while (robots.size() < n_robots) {
         CClientTCPSocket* req_client = serverSock.accept();
-        RobotConnection robot(req_client);
-        robots.push_back(robot);
+        // RobotConnection robot(req_client);
+        // robots.push_back(robot);
+        robots.emplace_back(req_client);
     }
     std::cout << "All robots connected" << std::endl;
 
     // start write thread
+    pending_outgoing = 0;
     write_thread = std::thread(&Server::write_loop, this);
 }
 
