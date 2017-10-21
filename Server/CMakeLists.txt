@@ -14,12 +14,15 @@ endif()
 # --------------------------------------------------------------------------
 FIND_PACKAGE( MRPT REQUIRED base slam )
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # Declare the target (an executable)
 ADD_EXECUTABLE(server
 	src/main.cpp
 	src/server.cpp
 	)
-TARGET_LINK_LIBRARIES(server ${MRPT_LIBS} jsoncpp)
+TARGET_LINK_LIBRARIES(server ${MRPT_LIBS} jsoncpp Threads::Threads)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++14")
 

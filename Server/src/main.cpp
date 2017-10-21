@@ -7,8 +7,11 @@
 void server_callback(Json::Value root);
 
 int main() {
-    Server server(server_callback, 8080);
-    server.start();
+    Server server(1, server_callback, 8080);
+
+    while (1) {
+        server.processReads();
+    }
 
     return 0;
 }
