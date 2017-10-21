@@ -21,6 +21,7 @@ find_package(Threads REQUIRED)
 ADD_EXECUTABLE(server
 	src/main.cpp
 	src/server.cpp
+	src/SLAMmer.cpp
 	)
 TARGET_LINK_LIBRARIES(server ${MRPT_LIBS} jsoncpp Threads::Threads)
 
