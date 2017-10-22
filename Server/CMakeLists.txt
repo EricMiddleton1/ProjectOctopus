@@ -12,6 +12,12 @@ endif()
 #   The dependencies of a library are automatically added, so you only
 #    need to specify the top-most libraries your code depend on.
 # --------------------------------------------------------------------------
+
+# Detect and add SFML
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
+find_package(SFML 2 REQUIRED graphics window system)
+
+
 FIND_PACKAGE( MRPT REQUIRED base slam )
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -23,7 +29,7 @@ ADD_EXECUTABLE(server
 	src/server.cpp
 	src/SLAMmer.cpp
 	)
-TARGET_LINK_LIBRARIES(server ${MRPT_LIBS} jsoncpp Threads::Threads)
+TARGET_LINK_LIBRARIES(server ${MRPT_LIBS} jsoncpp Threads::Threads ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++14")
 

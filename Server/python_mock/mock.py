@@ -21,7 +21,7 @@ class Environment:
     def get_reading(self, location):
         x_idx = int(location[0] * self.res)
         y_idx = int(location[1] * self.res)
-        return self.map[x_idx][y_idx]
+        return self.map[y_idx][x_idx]
 
 
 if __name__ == '__main__':
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     t_s = 0.5
     robot_x = 0.5
     while True:
-        robot_dx = math.sin(iteration * 0.1) * 0.01
+        robot_dx = math.sin(iteration * 0.1) * 0.02
         robot_x += robot_dx
         reflectivity = int(env.get_reading((robot_x, 0.5)))
         print("x: " + str(robot_x) + ", refl: " + str(reflectivity))

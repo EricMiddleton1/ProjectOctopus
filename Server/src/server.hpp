@@ -27,7 +27,7 @@ private:
 
 class Server {
 public:
-    Server(size_t n_robots, const SCb callback, unsigned short listenPort, std::string ipAddr="127.0.0.1");
+    Server(size_t n_robots, const SCb callback, unsigned short listenPort, std::string ipAddr="0.0.0.0");
 
     int write(const Json::Value data, size_t robot_id);
     void processReads();
