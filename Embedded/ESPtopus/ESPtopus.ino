@@ -17,13 +17,13 @@
 #define PIN_OF_Y0 14
 #define PIN_OF_Y1 3
 
-#define HEADING_KP  0.1f
+#define HEADING_KP  0.f //0.1f
 #define HEADING_KI  0.f //0.01f
 #define HEADING_KD  0.f
 
 #define MAX_HEADING_CORRECTION  0.1f
 
-#define IP_ADDR   "192.168.2.4"
+#define IP_ADDR   "192.168.2.3" //4
 #define PORT  8080
 #define BOT_ID  0
 
@@ -69,12 +69,14 @@ void loop() {
     
     communicator.sendUpdate(movement, color, timestamp);
 
+/*
     heading += headingDir;
     if( (heading > HEADING_MAX) || (heading < -HEADING_MAX) ) {
       heading -= headingDir;
 
       headingDir *= -1.f;
     }
-    driver.setHeading(heading);
+    //driver.setHeading(heading);
+    */
   }
 }
