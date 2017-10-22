@@ -2,6 +2,9 @@
 
 #include <ESP8266WiFi.h>
 
+#include "OpticalFlow.hpp"
+#include "Driver.hpp"
+
 #define PIN_L0  0
 #define PIN_L1  1
 #define PIN_R0  2
@@ -13,45 +16,25 @@
 #define PIN_OF_Y0 14
 #define PIN_OF_Y1 3
 
-#define PWM_MAX 1023
-#define SPEED 256
-
-uint16_t pwm = 0;
-
-volatile int counterX = 0, counterY = 0;
-volatile int stateX, stateY;
+#define HEADING_KP  0.1f
+#define HEADING_KI  0.01f
+#define HEADING_KD  0.f
 
 unsigned long motorTime;
 bool dir;
+
+OpticalFlow of(PIN_OF_X0, PIN_OF_X1, PIN_OF_Y0, PIN_OF_Y1, PIN_OF_EN);
+OpticalFlow::Flow flow;
+
+Driver driver( {PIN_L0, PIN_L1, PIN_R0, PIN_R1}, {HEADING_KP, HEADING_KI, HEADING_KD} );
 
 WiFiClient tcpClient;
 
 void setup() {
   WiFi.persistent(false);
-  
-  digitalWrite(PIN_OF_EN, LOW);
-  pinMode(PIN_OF_EN, OUTPUT);
 
-  pinMode(PIN_OF_X0, INPUT);
-  pinMode(PIN_OF_X1, INPUT);
-  pinMode(PIN_OF_Y0, INPUT);
-  pinMode(PIN_OF_Y1, INPUT);
-
-  stateX = flowState(digitalRead(PIN_OF_X0), digitalRead(PIN_OF_X1));
-  stateY = flowState(digitalRead(PIN_OF_Y0), digitalRead(PIN_OF_Y1));
-
-  attachInterrupt(digitalPinToInterrupt(PIN_OF_X0), isrFlowX, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(PIN_OF_X1), isrFlowX, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(PIN_OF_Y0), isrFlowY, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(PIN_OF_Y1), isrFlowY, CHANGE);
-
-  pinMode(PIN_L0, OUTPUT);
-  pinMode(PIN_L1, OUTPUT);
-  pinMode(PIN_R0, OUTPUT);
-  pinMode(PIN_R1, OUTPUT);
-
-  delay(1000);
-  digitalWrite(PIN_OF_EN, HIGH);
+  driver.begin();
+  of.begin();
 
   WiFi.mode(WIFI_STA);
   WiFi.begin("OctoNet", "3ricn3t1");
@@ -62,66 +45,18 @@ void setup() {
   tcpClient.connect("192.168.2.3", 8080);
   tcpClient.print("Connected.\r\n");
 
-  motorTime = millis();
-  analogWrite(PIN_L0, SPEED);
-  analogWrite(PIN_R0, SPEED);
-  dir = false;
+  driver.setSpeed(0.2);
+  driver.setHeading(0.f);
 }
 
 void loop() {
-  unsigned long curTime = millis();
-  if(curTime > (motorTime + 5000)) {
-    motorTime = curTime;
+  auto newFlow = of.get();
+  auto movement = driver.update(newFlow);
+  
+  //tcpClient.print(String("Flow X: ") + String(flow.x) + String("\tFlow Y: ") + String(flow.y) + String("\r\n"));
+  tcpClient.print(String("\tHeading: ") + String(driver.getHeading() * 180.f / PI) + String("\tHeading correction: ") + String(driver.getHeadingCorrection()) + String("\r\n"));
 
-    dir = !dir;
-    
-    digitalWrite(PIN_L1, dir);
-    digitalWrite(PIN_R1, dir);
-    
-    if(dir) {
-      analogWrite(PIN_L0, PWM_MAX - SPEED);
-      analogWrite(PIN_R0, PWM_MAX - SPEED);
-    }
-    else {
-      analogWrite(PIN_L0, SPEED);
-      analogWrite(PIN_R0, SPEED);
-    }
-  }
-
-  tcpClient.print(String("Flow X: ") + String(counterX) + String("\tFlow Y: ") + String(counterY) + String("\r\n"));
+  flow += newFlow;
 
   delay(10);
 }
-
-int flowState(int a, int b) {
-  return (a << 1) | b;
-}
-
-void isrFlowX() {
-  const int STATE_TABLE[4][4] {
-    {0, 1, -1, 0},
-    {-1, 0, 0, 1},
-    {1, 0, 0, -1},
-    {0, -1, 1, 0}
-  };
-  
-  int newState = flowState(digitalRead(PIN_OF_X0), digitalRead(PIN_OF_X1));
-
-  counterX += STATE_TABLE[stateX][newState];
-  stateX = newState;
-}
-
-void isrFlowY() {
-  const int STATE_TABLE[4][4] {
-    {0, 1, -1, 0},
-    {-1, 0, 0, 1},
-    {1, 0, 0, -1},
-    {0, -1, 1, 0}
-  };
-  
-  int newState = flowState(digitalRead(PIN_OF_Y0), !digitalRead(PIN_OF_Y1));
-
-  counterY += STATE_TABLE[stateY][newState];
-  stateY = newState;
-}
-
