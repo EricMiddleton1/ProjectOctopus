@@ -24,7 +24,7 @@ public:
     float x, y, theta;
   };
 
-  Driver(Motors&& motors, PID&& headingPID);
+  Driver(Motors&& motors, PID&& headingPID, float maxHeadingCorrection);
 
   void begin();
 
@@ -46,6 +46,6 @@ private:
   Motors motors;
   PID headingPID;
 
-  float speed, heading, headingCorrection;
+  float speed, heading, headingCorrection, maxHeadingCorrection;
 };
 

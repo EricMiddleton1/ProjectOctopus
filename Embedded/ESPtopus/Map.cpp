@@ -6,9 +6,7 @@ Map::Map(size_t _width, size_t _height)
   , height  {_height}
   , data  {new byte[width * height]} {
 
-  if(data != nullptr) {
-    memset(data, 0x00, width*height);
-  }
+  clear();
 }
 
 Map::~Map() {
@@ -21,7 +19,17 @@ Map::operator bool() const {
   return data != nullptr;
 }
 
+void Map::clear() {
+  if(data != nullptr) {
+    memset(data, 0x00, width*height);
+  }
+}
+
 const byte* Map::getRaw() const {
+  return data;
+}
+
+byte* Map::getRaw() {
   return data;
 }
 

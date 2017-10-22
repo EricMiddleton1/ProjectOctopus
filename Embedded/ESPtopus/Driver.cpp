@@ -42,12 +42,13 @@ float PID::update(float curpoint) {
   }
 }
 
-Driver::Driver(Motors&& _motors, PID&& _headingPID)
+Driver::Driver(Motors&& _motors, PID&& _headingPID, float _maxHeadingCorrection)
   : motors  {_motors}
   , headingPID  {_headingPID}
   , speed {0.f}
   , heading {0.f}
-  , headingCorrection {0.f} {
+  , headingCorrection {0.f}
+  , maxHeadingCorrection  {_maxHeadingCorrection} {
 }
 
 void Driver::begin() {
@@ -81,7 +82,7 @@ Driver::Movement Driver::update(const OpticalFlow::Flow& flow) {
 
   heading += m.theta;
 
-  headingCorrection = headingPID.update(heading);
+  headingCorrection = constrain(headingPID.update(heading), -maxHeadingCorrection, maxHeadingCorrection);
   updateMotors();
 
   return m;
