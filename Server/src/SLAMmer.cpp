@@ -92,7 +92,8 @@ void SLAMmer::performUpdate(const Json::Value& root) {
         // observation->reflectivityLevel = (float)r / 255.f;
         // observation->sensorStdNoise = 0.05;
 
-        CObservationReflectivityPtr obs_ptr(new CObservationReflectivity());
+        // CObservationReflectivityPtr obs_ptr(new CObservationReflectivity());
+        CObservationReflectivityPtr obs_ptr = CObservationReflectivity::Create();
         obs_ptr->reflectivityLevel = (float)r / 255.f;
         obs_ptr->sensorStdNoise = 0.05;
         obs_ptr->timestamp = reading_time * 10;
