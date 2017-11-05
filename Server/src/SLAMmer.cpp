@@ -2,6 +2,7 @@
 
 #include "SLAMmer.hpp"
 #include <mrpt/maps/CMultiMetricMap.h>
+#include <mrpt/random.h>
 
 using namespace mrpt::slam;
 using namespace mrpt::bayes;
@@ -9,28 +10,15 @@ using namespace mrpt::obs;
 using namespace mrpt::poses;
 using namespace mrpt::maps;
 
-SLAMmer::SLAMmer() {
 
-    // Setup map
-    rbpfMappingOptions.PF_options.PF_algorithm = CParticleFilter::pfAuxiliaryPFOptimal;
-    rbpfMappingOptions.PF_options.sampleSize = 100;
-    rbpfMappingOptions.insertionLinDistance = 0.03;
-    rbpfMappingOptions.localizeLinDistance = 0.03;
-    rbpfMappingOptions.insertionAngDistance = 1;
-    rbpfMappingOptions.localizeAngDistance = 1;
-    auto refl_map_init = new CReflectivityGridMap2D::TMapDefinition();
-    refl_map_init->min_x = 0; refl_map_init->min_y = 0;
-    refl_map_init->max_x = 1.5; refl_map_init->max_y = 1.5;
-    refl_map_init->resolution = 0.05;
-    // refl_map_init.insertionOpts.maxDistanceInsertion
-    auto init_maps = TSetOfMetricMapInitializers();
-    init_maps.push_back(TMetricMapInitializerPtr(refl_map_init));
-    rbpfMappingOptions.mapsInitializers = init_maps;
+
+SLAMmer::SLAMmer(CMetricMapBuilderRBPF::TConstructionOptions& rbpfMappingOptions) : mapBuilder(rbpfMappingOptions), log_f("data.rawlog") {
+
 
     // rbpfMappingOptions.PF_options.resamplingMethod = CParticleFilter::prSystematic;
 
     // Create Rao-Blackweillized Particle Filter with options
-    mapBuilder = CMetricMapBuilderRBPF(rbpfMappingOptions);
+    // mapBuilder = CMetricMapBuilderRBPF(rbpfMappingOptions);
 
     // sf_frame = CSensoryFramePtr(new CSensoryFrame());
     // sf_frame = CSensoryFrame::Create();
@@ -42,6 +30,42 @@ SLAMmer::SLAMmer() {
     motion_model.gaussianModel.a2 = 0; // meters/degree
     motion_model.gaussianModel.a3 = 0; // degrees/meter
     motion_model.gaussianModel.a4 = 0; // degrees/degree
+    motion_model.gaussianModel.minStdXY = 0.005; // meters
+    motion_model.gaussianModel.minStdPHI = 1; // degrees
+    
+    mapBuilder.options.enableMapUpdating = true;
+    mapBuilder.options.debugForceInsertion = false;
+    mrpt::random::randomGenerator.randomize();
+
+    // Initialize map
+    // CSimpleMap       dummySimpleMap;
+    // CPosePDFGaussian startPose;
+
+
+    // startPose.mean.x(0);
+    // startPose.mean.y(0);
+    // startPose.mean.phi(0.01);
+    // startPose.cov.setZero();
+
+    // // mrpt::maps::COccupancyGridMap2D gridmap;
+    // // {
+    // //     mrpt::utils::CFileGZInputStream f(METRIC_MAP_CONTINUATION_GRIDMAP_FILE);
+    // //     f >> gridmap;
+    // // }
+
+    // mapBuilder.initialize(dummySimpleMap, &startPose);
+
+    
+	// 	for (CMultiMetricMapPDF::CParticleList::iterator it=mapBuilder.mapPDF.m_particles.begin();it!=mapBuilder.mapPDF.m_particles.end();++it) {
+	// 		CRBPFParticleData* part_d = it->d.get();
+	// 		CMultiMetricMap &mmap = part_d->mapTillNow;
+	// 		mrpt::maps::CReflectivityGridMap2DPtr it_grid = mmap.getMapByClass<mrpt::maps::CReflectivityGridMap2D>();
+	// 		ASSERTMSG_(it_grid.present(), "No gridmap in multimetric map definition, but metric map continuation was set (!)" );
+	// 		// it_grid->copyMapContentFrom( gridmap );
+	// 	}
+
+    // mapBuilder.initialize();
+    mapBuilder.setVerbosityLevel(  mrpt::utils::LVL_INFO );  // default value: as loaded from config file
 }
 
 
@@ -71,19 +95,23 @@ void SLAMmer::performUpdate(const Json::Value& root) {
         std::cout << "Exception when reading JSON: " << e.what() << std::endl;
     }
 
+    long utc_timestamp = reading_time * 10;
+    // float sensor_std = 0.01;
+    float sensor_std = 0.01;
+
     {
         // TODO: calculate standard devation
-        motion_model.gaussianModel.minStdXY = 0.01;
+        motion_model.gaussianModel.minStdXY = 0.005;
         // Note: in degrees
-        motion_model.gaussianModel.minStdPHI = 0.1;
+        motion_model.gaussianModel.minStdPHI = 0.01;
 
         CActionCollectionPtr action = CActionCollection::Create();
 
         CActionRobotMovement2D actmov;
-        CPose2D pose_change(dx, dy, (180.f / M_PI) * dphi);
+        CPose2D pose_change(dx, dy, dphi);
         actmov.computeFromOdometry(pose_change, motion_model);
         // timestamp is in 100-nanosecond intervals
-        actmov.timestamp = reading_time * 10;
+        actmov.timestamp = utc_timestamp;
 
         action->insert(actmov);
 
@@ -92,13 +120,32 @@ void SLAMmer::performUpdate(const Json::Value& root) {
         // observation->reflectivityLevel = (float)r / 255.f;
         // observation->sensorStdNoise = 0.05;
 
-        // CObservationReflectivityPtr obs_ptr(new CObservationReflectivity());
-        CObservationReflectivityPtr obs_ptr = CObservationReflectivity::Create();
-        obs_ptr->reflectivityLevel = (float)r / 255.f;
-        obs_ptr->sensorStdNoise = 0.05;
-        obs_ptr->timestamp = reading_time * 10;
-        sf_frame->insert(obs_ptr);
 
+        // CObservationReflectivityPtr obs_ptr(new CObservationReflectivity());
+        CObservationReflectivityPtr obs_red = CObservationReflectivity::Create();
+        CObservationReflectivityPtr obs_green = CObservationReflectivity::Create();
+        CObservationReflectivityPtr obs_blue = CObservationReflectivity::Create();
+        obs_red->reflectivityLevel = (float)r / 255.f;
+        obs_green->reflectivityLevel = (float)g / 255.f;
+        obs_blue->reflectivityLevel = (float)b / 255.f;
+        obs_red->channel = 0;
+        obs_green->channel = 1;
+        obs_blue->channel = 2;
+        obs_red->sensorStdNoise = obs_green->sensorStdNoise = obs_blue->sensorStdNoise = sensor_std;
+        obs_red->timestamp = obs_green->timestamp = obs_blue->timestamp = utc_timestamp;
+
+        sf_frame->insert(obs_red);
+        sf_frame->insert(obs_green);
+        sf_frame->insert(obs_blue);
+
+        static int count = 0;
+        if (count == 100) {
+            log_f.close();
+        }
+        else if (count < 100) {
+            log_f << *action << *sf_frame;
+        }
+        count += 1;
 
         // std::cout << "insertionLinDist: " << CMetricMapBuilderRBPF::insertionLinDistance << std::endl;
         mapBuilder.processActionObservation(*action, *sf_frame);
@@ -113,19 +160,23 @@ void SLAMmer::performUpdate(const Json::Value& root) {
     }
 }
 
-void SLAMmer::getEstimatedMap(mrpt::utils::CImage& map_img) {
+void SLAMmer::getEstimatedMap(mrpt::utils::CImage& red_img, mrpt::utils::CImage& green_img, mrpt::utils::CImage& blue_img) {
     static int cnt = 0;
     const CMultiMetricMap* mostLikMap = mapBuilder.mapPDF.getCurrentMostLikelyMetricMap();
     // std::cout << mostLikMap->maps.size() << " maps" << std::endl;
     // if (mostLikMap->m_gridMaps.size() > 0) {
-    if (mostLikMap->m_reflectivityMaps.size() > 0) {
-        CReflectivityGridMap2DPtr map = mostLikMap->m_reflectivityMaps[0];
-        map->getAsImage(map_img);
+    if (mostLikMap->m_reflectivityMaps.size() == 3) {
+        CReflectivityGridMap2DPtr red_map = mostLikMap->m_reflectivityMaps[0];
+        CReflectivityGridMap2DPtr green_map = mostLikMap->m_reflectivityMaps[1];
+        CReflectivityGridMap2DPtr blue_map = mostLikMap->m_reflectivityMaps[2];
+        red_map->getAsImage(red_img);
+        green_map->getAsImage(green_img);
+        blue_map->getAsImage(blue_img);
         // mapBuilder.drawCurrentEstimationToImage(&map_img);
         // map_img.saveToFile(std::string("./mapping_") + std::to_string(cnt) + ".png");
     }
     else {
-        std::cout << "No reflectivity maps" << std::endl;
+        std::cout << "Not the right number of reflectivity maps" << std::endl;
     }
-    cnt++;;
+    cnt++;
 }

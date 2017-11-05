@@ -24,7 +24,6 @@ void RobotConnection::processReads(SCb callback) {
         if (size_remaining == 0) {
             // Guaranteed to have enough data for size header if here
             socket->ReadBuffer(&size_remaining, sizeof(size_remaining));
-            std::cout << "Going to read " << size_remaining << " bytes" << std::endl;
             size_read = 0;
             unprocessed_data.reserve(size_remaining);
         }

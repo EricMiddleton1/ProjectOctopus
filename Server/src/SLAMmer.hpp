@@ -9,14 +9,13 @@
 
 class SLAMmer {
 public:
-    SLAMmer();
+    SLAMmer(mrpt::slam::CMetricMapBuilderRBPF::TConstructionOptions& rbpfMappingOptions);
 
     void performUpdate(const Json::Value& root);
 
-    void getEstimatedMap(mrpt::utils::CImage& map_img);
+    void getEstimatedMap(mrpt::utils::CImage& red_img, mrpt::utils::CImage& green_img, mrpt::utils::CImage& blue_img);
 
 private:
-    mrpt::slam::CMetricMapBuilderRBPF::TConstructionOptions rbpfMappingOptions;
     mrpt::obs::CActionRobotMovement2D::TMotionModelOptions motion_model;
 
     // mrpt::obs::CSensoryFramePtr sf_frame;
@@ -25,4 +24,6 @@ private:
     std::vector<uint64_t> last_update_times;
     
     mrpt::slam::CMetricMapBuilderRBPF mapBuilder;
+
+    mrpt::utils::CFileOutputStream log_f;
 };
