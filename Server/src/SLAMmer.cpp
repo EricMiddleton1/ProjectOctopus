@@ -105,7 +105,7 @@ void SLAMmer::performUpdate(const Json::Value& root) {
         // Note: in degrees
         motion_model.gaussianModel.minStdPHI = 0.01;
 
-        CActionCollectionPtr action = CActionCollection::Create();
+        CActionCollection::Ptr action = CActionCollection::Create();
 
         CActionRobotMovement2D actmov;
         CPose2D pose_change(dx, dy, dphi);
@@ -115,16 +115,16 @@ void SLAMmer::performUpdate(const Json::Value& root) {
 
         action->insert(actmov);
 
-        CSensoryFramePtr sf_frame = CSensoryFrame::Create();
+        CSensoryFrame::Ptr sf_frame = CSensoryFrame::Create();
         // CObservationReflectivity* observation = new CObservationReflectivity();
         // observation->reflectivityLevel = (float)r / 255.f;
         // observation->sensorStdNoise = 0.05;
 
 
         // CObservationReflectivityPtr obs_ptr(new CObservationReflectivity());
-        CObservationReflectivityPtr obs_red = CObservationReflectivity::Create();
-        CObservationReflectivityPtr obs_green = CObservationReflectivity::Create();
-        CObservationReflectivityPtr obs_blue = CObservationReflectivity::Create();
+        CObservationReflectivity::Ptr obs_red = CObservationReflectivity::Create();
+        CObservationReflectivity::Ptr obs_green = CObservationReflectivity::Create();
+        CObservationReflectivity::Ptr obs_blue = CObservationReflectivity::Create();
         obs_red->reflectivityLevel = (float)r / 255.f;
         obs_green->reflectivityLevel = (float)g / 255.f;
         obs_blue->reflectivityLevel = (float)b / 255.f;
@@ -151,7 +151,7 @@ void SLAMmer::performUpdate(const Json::Value& root) {
         mapBuilder.processActionObservation(*action, *sf_frame);
 
         CPose3D estimate_mean;
-        CPose3DPDFPtr estimate_pdf = mapBuilder.getCurrentPoseEstimation();
+        CPose3DPDF::Ptr estimate_pdf = mapBuilder.getCurrentPoseEstimation();
         estimate_pdf->getMean(estimate_mean);
         std::cout << "Estimated position: " << estimate_mean.x() << ", " << estimate_mean.y() << std::endl;
 
@@ -166,9 +166,9 @@ void SLAMmer::getEstimatedMap(mrpt::utils::CImage& red_img, mrpt::utils::CImage&
     // std::cout << mostLikMap->maps.size() << " maps" << std::endl;
     // if (mostLikMap->m_gridMaps.size() > 0) {
     if (mostLikMap->m_reflectivityMaps.size() == 3) {
-        CReflectivityGridMap2DPtr red_map = mostLikMap->m_reflectivityMaps[0];
-        CReflectivityGridMap2DPtr green_map = mostLikMap->m_reflectivityMaps[1];
-        CReflectivityGridMap2DPtr blue_map = mostLikMap->m_reflectivityMaps[2];
+        CReflectivityGridMap2D::Ptr red_map = mostLikMap->m_reflectivityMaps[0];
+        CReflectivityGridMap2D::Ptr green_map = mostLikMap->m_reflectivityMaps[1];
+        CReflectivityGridMap2D::Ptr blue_map = mostLikMap->m_reflectivityMaps[2];
         red_map->getAsImage(red_img);
         green_map->getAsImage(green_img);
         blue_map->getAsImage(blue_img);

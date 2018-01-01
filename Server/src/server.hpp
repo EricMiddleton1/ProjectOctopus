@@ -5,20 +5,19 @@
 #include <thread>
 #include <atomic>
 
-#include <mrpt/utils/CServerTCPSocket.h>
+#include <mrpt/comms/CServerTCPSocket.h>
 #include <jsoncpp/json/value.h>
 
 typedef std::function<void(const Json::Value&)> SCb;
 
 class RobotConnection {
 public:
-    RobotConnection(mrpt::utils::CClientTCPSocket* sock);
-    ~RobotConnection();
+    RobotConnection(std::shared_ptr<mrpt::comms::CClientTCPSocket> sock);
     // Reads any available data, and calls do_callback if data is complete
     void processReads(SCb callback);
     void write(const Json::Value& root);
 private:
-    mrpt::utils::CClientTCPSocket* socket;
+    std::shared_ptr<mrpt::comms::CClientTCPSocket> socket;
     std::vector<char> unprocessed_data;
     uint32_t size_read = 0;
     // Size remaining in this message
@@ -35,7 +34,7 @@ public:
 private:
     SCb cb_func;
     std::vector<RobotConnection> robots;
-    mrpt::utils::CServerTCPSocket serverSock;
+    mrpt::comms::CServerTCPSocket serverSock;
 
     std::queue<std::pair<Json::Value, RobotConnection*>> send_q;
 

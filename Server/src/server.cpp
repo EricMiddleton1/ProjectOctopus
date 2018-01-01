@@ -1,4 +1,4 @@
-#include <mrpt/utils/CClientTCPSocket.h>
+#include <mrpt/comms/CClientTCPSocket.h>
 #include <jsoncpp/json/reader.h>
 #include <jsoncpp/json/writer.h>
 
@@ -7,14 +7,10 @@
 #include <cassert>
 
 #include "server.hpp"
-using namespace mrpt::utils;
+using namespace mrpt::comms;
 
-RobotConnection::RobotConnection(CClientTCPSocket* sock) {
+RobotConnection::RobotConnection(std::shared_ptr<CClientTCPSocket> sock) {
     socket = sock;
-}
-
-RobotConnection::~RobotConnection() {
-    delete socket;
 }
 
 void RobotConnection::processReads(SCb callback) {
@@ -63,7 +59,7 @@ Server::Server(size_t n_robots, const SCb callback, unsigned short listenPort, s
     cb_func = callback;
     std::cout << "Waiting for robots to connect..." << std::endl;
     while (robots.size() < n_robots) {
-        CClientTCPSocket* req_client = serverSock.accept();
+        std::shared_ptr<CClientTCPSocket> req_client = serverSock.accept();
         // RobotConnection robot(req_client);
         // robots.push_back(robot);
         robots.emplace_back(req_client);
