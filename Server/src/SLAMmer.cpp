@@ -35,7 +35,7 @@ SLAMmer::SLAMmer(CMetricMapBuilderRBPF::TConstructionOptions& rbpfMappingOptions
     
     mapBuilder.options.enableMapUpdating = true;
     mapBuilder.options.debugForceInsertion = false;
-    mrpt::random::randomGenerator.randomize();
+    mrpt::random::Randomize();
 
     // Initialize map
     // CSimpleMap       dummySimpleMap;

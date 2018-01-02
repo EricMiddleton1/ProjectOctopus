@@ -1,0 +1,2 @@
+libsfml-dev
+libjsoncpp-dev

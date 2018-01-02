@@ -6,6 +6,7 @@
 #include <mrpt/obs/CActionRobotMovement2D.h>
 #include <mrpt/obs/CObservationReflectivity.h>
 #include <mrpt/utils/CImage.h>
+#include <mrpt/utils/CFileOutputStream.h>
 
 class SLAMmer {
 public:
