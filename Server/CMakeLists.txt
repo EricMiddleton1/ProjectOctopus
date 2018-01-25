@@ -18,6 +18,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 find_package(SFML 2 REQUIRED graphics window system)
 
+# Add OpenCV
+find_package( OpenCV REQUIRED )
 
 FIND_PACKAGE( MRPT REQUIRED base slam comms)
 
@@ -30,7 +32,7 @@ ADD_EXECUTABLE(server
 	src/server.cpp
 	src/SLAMmer.cpp
 	)
-TARGET_LINK_LIBRARIES(server ${MRPT_LIBS} jsoncpp Threads::Threads ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})
+TARGET_LINK_LIBRARIES(server ${MRPT_LIBS} jsoncpp Threads::Threads ${SFML_LIBRARIES} ${SFML_DEPENDENCIES} ${OpenCV_LIBS} )
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall")
 

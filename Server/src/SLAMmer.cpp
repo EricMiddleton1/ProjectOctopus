@@ -72,6 +72,7 @@ SLAMmer::SLAMmer(CMetricMapBuilderRBPF::TConstructionOptions& rbpfMappingOptions
 void SLAMmer::performUpdate(const Json::Value& root) {
     // movement info
     double dx, dy, dphi;
+    int32_t ticks_l, ticks_r;
     // observation
     int r, g, b;
     // metadata
@@ -79,8 +80,10 @@ void SLAMmer::performUpdate(const Json::Value& root) {
     uint64_t reading_time;
 
     try {
-        dx = root.get("dx", 0).asDouble();
-        dy = root.get("dy", 0).asDouble();
+        // dx = root.get("dx", 0).asDouble();
+        // dy = root.get("dy", 0).asDouble();
+        ticks_l = root.get("ticks_l", 0).asInt();
+        ticks_r = root.get("ticks_r", 0).asInt();
         dphi = root.get("dphi", 0).asDouble();
 
         Json::Value color = root["color"];
@@ -100,16 +103,23 @@ void SLAMmer::performUpdate(const Json::Value& root) {
     float sensor_std = 0.01;
 
     {
-        // TODO: calculate standard devation
-        motion_model.gaussianModel.minStdXY = 0.005;
-        // Note: in degrees
-        motion_model.gaussianModel.minStdPHI = 0.01;
-
         CActionCollection::Ptr action = CActionCollection::Create();
 
         CActionRobotMovement2D actmov;
-        CPose2D pose_change(dx, dy, dphi);
-        actmov.computeFromOdometry(pose_change, motion_model);
+
+        // TODO: calculate standard devation
+        actmov.motionModelConfiguration.gaussianModel.minStdXY = 0.005;
+        // Note: in degrees
+        actmov.motionModelConfiguration.gaussianModel.minStdPHI = 0.01;
+        actmov.motionModelConfiguration = motion_model;
+        // CPose2D pose_change(dx, dy, dphi);
+        // actmov.computeFromOdometry(pose_change, motion_model);
+        actmov.hasEncodersInfo = true;
+        actmov.encoderLeftTicks = ticks_l;
+        actmov.encoderRightTicks = ticks_r;
+        // wheel cicrcumference = 0.199 meters
+        // 
+        actmov.computeFromEncoders(160.80402, 160.80402, 0.133);
         // timestamp is in 100-nanosecond intervals
         actmov.timestamp = utc_timestamp;
 
@@ -154,6 +164,7 @@ void SLAMmer::performUpdate(const Json::Value& root) {
         CPose3DPDF::Ptr estimate_pdf = mapBuilder.getCurrentPoseEstimation();
         estimate_pdf->getMean(estimate_mean);
         std::cout << "Estimated position: " << estimate_mean.x() << ", " << estimate_mean.y() << std::endl;
+        std::cout << "Color: " << r << ", " << g << ", " << b << std::endl;
 
         // sf_frame->clear();
         // action->clear();
